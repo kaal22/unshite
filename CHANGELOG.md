@@ -1,8 +1,11 @@
 # Changelog
 
+## 2.0.1
+- Get it free on Gumroad (noshitesites.gumroad.com/l/unshite), which also sends update emails. The GitHub install command is no longer advertised.
+
 ## 2.0.0
 - **New name: Unshite My Site.** Run it with `/unshite:my-site`. The report goes to `.unshite/report.md`. The checks and the score are unchanged.
-- Install from GitHub (`/plugin marketplace add kaal22/unshite`) or get the zip free at noshitesites.com/check.
+- Get the zip free at noshitesites.com/check.
 
 ## 1.0.4
 - Now installs straight from GitHub inside Claude Code, no zip needed.

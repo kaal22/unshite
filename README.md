@@ -6,16 +6,9 @@ Made by a UK web designer as a free taster of No Shite Sites (noshitesites.com).
 
 ## Install
 
-Inside Claude Code, type:
-
-```
-/plugin marketplace add kaal22/unshite
-/plugin install unshite@unshite
-```
-
-Then open Claude Code in your website's project folder and type `/unshite:my-site`. The browser checks need [Node.js](https://nodejs.org).
-
-Prefer a zip? Get it free at [noshitesites.com/check](https://noshitesites.com/check), drag it into a Claude Code chat and type "Install this plugin for me." Claude does the rest (it follows `INSTALL-FOR-CLAUDE.md`).
+1. **Get it free on Gumroad:** [noshitesites.gumroad.com/l/unshite](https://noshitesites.gumroad.com/l/unshite). You'll also get update emails and a short guide to the five AI tells.
+2. Drag the zip into a Claude Code chat and type "Install this plugin for me." Claude does the rest (it follows `INSTALL-FOR-CLAUDE.md`).
+3. Restart Claude, open your website's project folder and type `/unshite:my-site`. The browser checks need [Node.js](https://nodejs.org).
 
 ![A bakery site before and after Unshite My Site: 50, looks AI-made, to 100, looks designed](images/before-after.png)
 
@@ -61,7 +54,7 @@ It's made for sites built with Claude Code or Codex. With only a URL (a live sit
 - **Files it writes.** Fixes go into your site's files (design and wording changes only after you say yes), and the report goes to `.unshite/report.md`. With only a URL, it changes nothing.
 
 ## Updates
-Get update emails and a short guide to the five AI tells at [noshitesites.com/check](https://noshitesites.com/check). To update a GitHub install: `/plugin marketplace update unshite`.
+Update emails come from Gumroad. To update, download the new zip from your Gumroad library and install it the same way.
 
 ## Licence
 Free to use on your own and your clients' sites, including commercial work. Not open source: please don't resell it or copy it into another product. See `LICENSE.md`.

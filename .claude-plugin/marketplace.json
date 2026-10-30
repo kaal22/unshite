@@ -1,0 +1,18 @@
+{
+  "name": "unshite",
+  "owner": {
+    "name": "No Shite Sites",
+    "url": "https://noshitesites.com"
+  },
+  "metadata": {
+    "description": "Unshite My Site: a free AI slop score and website fixer for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "unshite",
+      "source": "./",
+      "description": "Gives any website an AI slop score out of 100, then finds and fixes the generic AI look and the broken details AI builders leave behind.",
+      "version": "2.0.0"
+    }
+  ]
+}

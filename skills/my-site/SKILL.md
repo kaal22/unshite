@@ -19,7 +19,7 @@ Be honest and specific. Never invent facts for a client's site (reviews, stats, 
 - Create `.unshite/report.md` for the results.
 
 ## 1. The AI slop score (desktop)
-Run `slop-probe.js` (next to this file) in the page at **1440×900**. It returns `{ score, grade, findings }`. Each finding has points, examples and a plain fix:
+Run `slop-probe.js` (next to this file) in the page at **1440×900**. It is async: it scrolls slowly through the page first (so lazy images and scroll-reveal sections load), then resolves with `{ score, grade, findings }`. Each finding has points, examples and a plain fix:
 
 | Finding | Means | Points |
 |---|---|---|
@@ -27,7 +27,8 @@ Run `slop-probe.js` (next to this file) in the page at **1440×900**. It returns
 | `emoji-icons` | Emoji used as icons in headings, cards and buttons | 8 to 12 |
 | `cliche-copy` | AI-sounding words: elevate, seamless, unlock, cutting-edge, empower… | up to 14 |
 | `placeholder` | Lorem ipsum, "Your Company", John Doe, (555) numbers, links to `#` | up to 14 |
-| `identical-cards` | Rows of identical icon + heading + text cards | 5 to 9 |
+| `identical-cards` | Rows or grids of identical icon (or number) + heading + text cards | 5 to 9 |
+| `no-photos` | Not one photograph or video anywhere on the page | 8 |
 | `black-text` | Pure black, or the near-black template default (#0F172A, #111827, #111) | 8 |
 | `generic-font` | One default font (Inter, Roboto, Poppins, system…) for headings and body | 8 |
 | `stock-hero` | Centred headline, two buttons, no photograph: the hero every AI tool makes | 8 |
@@ -35,7 +36,8 @@ Run `slop-probe.js` (next to this file) in the page at **1440×900**. It returns
 | `all-centred` | Every section heading centred | 6 |
 | `glass-glow` | Frosted glass and coloured glows all over | 6 |
 | `repeating-sections` | Three or more sections in a row with the same layout | 6 |
-| `default-accent` | The default indigo/violet button colour | 5 |
+| `default-accent` | The default Tailwind blue, indigo or violet button colour | 5 |
+| `builder-badge` | The AI builder's badge still on ("Edit with Lovable", Bolt, v0, Replit) | 6 |
 | `hero-pill` | The little "✨ New: …" pill above the headline | 4 |
 | `vague-stats` | Round-number stats that may be made up ("10,000+ happy customers") | 4 |
 

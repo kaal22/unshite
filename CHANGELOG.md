@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0
+- **Sees modern AI-built sites properly.** Lovable, Bolt and v0 sites built with Tailwind 4 write their colours in a newer format (oklch) that the score couldn't read, so near-black text and the default blue buttons slipped through. Every colour format is read now.
+- **Two new AI tells:** not one photograph on the whole site (8 points), and the AI builder's own badge left on, like "Edit with Lovable" (6 points).
+- Tailwind's vivid default blue now counts as a default accent, alongside indigo and violet. Numbered cards ("01", "[02]") count as identical cards, including grids of six.
+- The check scrolls slowly through the page first, so slow sites, lazy images and sections that fade in as you scroll are all loaded before it judges anything.
+- Fewer false alarms: a real numbered list of steps no longer counts as identical cards.
+
 ## 2.0.1
 - Get it free on Gumroad (noshitesites.gumroad.com/l/unshite), which also sends update emails. The GitHub install command is no longer advertised.
 

@@ -1,11 +1,32 @@
 // Unshite My Site: AI slop probe. Paste into the page (or run with Playwright's page.evaluate) at 1440x900.
 // Looks for the things that make a website read as "made by AI": the purple gradient, emoji icons,
 // one generic font, three identical cards, stock hero, cliché copy, placeholder content and so on.
-// Returns { score, grade, findings: [{ type, title, points, count, examples, fix }] }.
+// It is async: it first scrolls slowly through the page so lazy images and scroll-reveal sections
+// load (slow sites included), returns to the top, then checks.
+// Resolves with { score, grade, findings: [{ type, title, points, count, examples, fix }] }.
 // Every finding is a lead: confirm it on screen before changing anything.
-(() => {
+(async () => {
   const W = window.innerWidth, H = window.innerHeight;
   if (!W || !H) return { error: 'The window is 0x0 (hidden or minimised). Set a real size (1440x900) and run again.' };
+
+  // ---------- warm-up: load the whole page before judging it ----------
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const started = Date.now();
+  if (document.readyState !== 'complete') await Promise.race([new Promise((r) => addEventListener('load', r, { once: true })), sleep(15000)]);
+  if (window.lenis && typeof window.lenis.stop === 'function') window.lenis.stop();
+  const root = document.documentElement, savedBehaviour = root.style.getPropertyValue('scroll-behavior');
+  root.style.setProperty('scroll-behavior', 'auto', 'important');
+  const pendingImages = () => [...document.images].filter((im) => !im.complete && im.getBoundingClientRect().top < H * 1.5 && im.getBoundingClientRect().bottom > -H * 0.5);
+  for (let y = 0; y < root.scrollHeight - H && Date.now() - started < 25000; y += Math.round(H * 0.6)) {
+    scrollTo(0, y);
+    await sleep(350);
+    const waitFor = pendingImages();
+    if (waitFor.length) await Promise.race([Promise.all(waitFor.map((im) => im.decode().catch(() => {}))), sleep(2000)]);
+  }
+  scrollTo(0, root.scrollHeight); await sleep(600);
+  scrollTo(0, 0); await sleep(700);
+  root.style.setProperty('scroll-behavior', savedBehaviour);
+  if (window.lenis && typeof window.lenis.start === 'function') window.lenis.start();
 
   const findings = [];
   const add = (type, title, points, examples, fix, count) => {
@@ -19,7 +40,26 @@
     const r = el.getBoundingClientRect();
     return r.width > 1 && r.height > 1;
   };
-  const rgb = (c) => { const m = (c || '').match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?/); return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null; };
+  // Any CSS colour to sRGB {r,g,b,a}. Tailwind 4 (Lovable, Bolt, v0) reports colours as oklch(),
+  // so anything that isn't rgb() is painted on a 1px canvas and read back.
+  const COLOR_FN = /(?:rgba?|hsla?|hwb|oklch|oklab|lch|lab|color)\([^()]*\)|#[0-9a-f]{3,8}\b/gi;
+  const pix = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  const colourCache = new Map();
+  const rgb = (c) => {
+    c = (c || '').trim();
+    if (!c || c === 'transparent' || c === 'none') return null;
+    if (colourCache.has(c)) return colourCache.get(c);
+    let out = null;
+    const m = c.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+)(%?))?\s*\)/);
+    if (m) out = { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : m[5] ? +m[4] / 100 : +m[4] };
+    else if (pix && CSS.supports('color', c)) {
+      pix.clearRect(0, 0, 1, 1); pix.fillStyle = c; pix.fillRect(0, 0, 1, 1);
+      const d = pix.getImageData(0, 0, 1, 1).data;
+      out = { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
+    }
+    colourCache.set(c, out);
+    return out;
+  };
   const hsl = ({ r, g, b }) => {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
@@ -28,7 +68,7 @@
     let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
     return { h: h * 60, s, l };
   };
-  const colorsIn = (str) => (str.match(/rgba?\([^)]*\)/g) || []).map(rgb).filter(Boolean);
+  const colorsIn = (str) => (str.match(COLOR_FN) || []).map(rgb).filter(Boolean);
   const label = (el) => {
     const t = (el.innerText || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 50);
     const tag = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/)[0] : '');
@@ -92,24 +132,32 @@
   // ---------- 5b. The default indigo / violet accent ----------
   const btns = [...document.querySelectorAll('a, button')].filter((x) => visible(x) && x.getBoundingClientRect().height >= 32 && (x.innerText || '').trim().length > 1 && (x.innerText || '').trim().length < 40);
   const filled = btns.filter((x) => { const c = rgb(getComputedStyle(x).backgroundColor); return c && c.a >= 0.8 && hsl(c).s > 0.3; });
-  const indigo = filled.filter((x) => { const { h, s: sat, l } = hsl(rgb(getComputedStyle(x).backgroundColor)); return h >= 238 && h <= 275 && sat > 0.5 && l > 0.3 && l < 0.7; });
+  // indigo/violet, or Tailwind's own vivid default blue (#2563EB, #1D4ED8 and the Tailwind 4 versions)
+  const indigo = filled.filter((x) => {
+    const { h, s: sat, l } = hsl(rgb(getComputedStyle(x).backgroundColor));
+    return (h >= 238 && h <= 275 && sat > 0.5 && l > 0.3 && l < 0.7) || (h >= 215 && h < 238 && sat > 0.78 && l > 0.38 && l < 0.6);
+  });
   if (indigo.length >= 2 && indigo.length >= filled.length * 0.5)
-    add('default-accent', 'The default indigo/violet button colour', 5, indigo.map(label),
-      'Indigo and violet buttons (#4F46E5, #6366F1, #7C3AED) are the colour AI tools reach for first. Choose an accent from the business itself (its van, its materials, its place) and check it against your text colours.', indigo.length);
+    add('default-accent', 'The default blue, indigo or violet button colour', 5, indigo.map(label),
+      'Tailwind\'s vivid default blue and the indigo/violet family (#2563EB, #4F46E5, #6366F1, #7C3AED) are the colours AI tools reach for first. Choose an accent from the business itself (its van, its materials, its place) and check it against your text colours.', indigo.length);
 
   // ---------- 6. Three (or more) identical cards in a row ----------
   const grids = [];
   for (const parent of document.querySelectorAll('body *')) {
     const kids = [...parent.children].filter(visible);
-    if (kids.length < 3 || kids.length > 8) continue;
+    // a real numbered list (<ol>) of steps is the fix this check recommends, not the problem
+    if (kids.length < 3 || kids.length > 9 || parent.tagName === 'OL') continue;
     const rs = kids.map((k) => k.getBoundingClientRect());
-    const sameRow = rs.every((r) => Math.abs(r.top - rs[0].top) < 6);
+    // one row of 3+, or a grid of rows of 3+ (six cards in 3x2 count too)
+    const rows = new Set(rs.map((r) => Math.round(r.top / 6)));
+    const sameRow = rows.size <= Math.floor(kids.length / 3);
     const sameSize = rs.every((r) => Math.abs(r.width - rs[0].width) < 6 && Math.abs(r.height - rs[0].height) < 24);
     if (!sameRow || !sameSize || rs[0].width < 160 || rs[0].width > W * 0.45) continue;
-    const cardLike = kids.every((k) => k.querySelector('h2,h3,h4,strong') && k.querySelector('p') && (k.querySelector('svg,img,i,[class*=icon]') || emojiRe.test(k.textContent.slice(0, 6))));
+    // an icon, an emoji or a number label ("01", "[02]", "3.") above a heading and a line of text
+    const cardLike = kids.every((k) => k.querySelector('h2,h3,h4,strong') && k.querySelector('p') && (k.querySelector('svg,img,i,[class*=icon]') || emojiRe.test(k.textContent.slice(0, 6)) || /^\s*\[?\d{1,2}\]?[.)]?\s/.test(k.innerText || '')));
     if (cardLike && !grids.some((g) => g.contains(parent) || parent.contains(g))) grids.push(parent);
   }
-  if (grids.length) add('identical-cards', 'Rows of identical icon + heading + text cards', grids.length >= 2 ? 9 : 5,
+  if (grids.length) add('identical-cards', 'Rows of identical icon (or number) + heading + text cards', grids.length >= 2 ? 9 : 5,
     grids.map((g) => `${label(g)} (${g.children.length} cards)`),
     'Three identical cards (icon, heading, two lines) is the default AI section, and repeating it down the page makes every section look the same. Vary the layout: a list with numbers, a split with a photo, one big feature and two small ones, or a short paragraph.', grids.length);
 
@@ -146,7 +194,7 @@
     const s = getComputedStyle(el);
     if (/blur\(/.test(s.backdropFilter || s.webkitBackdropFilter || '') && !el.closest('header, nav')) { glass++; if (ggEx.length < 5) ggEx.push('glass: ' + label(el)); }
     if (s.boxShadow && s.boxShadow !== 'none') {
-      const m = s.boxShadow.match(/rgba?\([^)]*\)\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/);
+      const m = s.boxShadow.match(/(?:rgba?|oklch|oklab|lch|lab|hsla?|color)\([^()]*\)\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/);
       const c = colorsIn(s.boxShadow)[0];
       if (m && c && +m[3] >= 24 && hsl(c).s > 0.45 && c.a > 0.2) { glow++; if (ggEx.length < 5) ggEx.push('glow: ' + label(el)); }
     }
@@ -194,6 +242,31 @@
   for (let i = 1; i < shapes.length; i++) { run = shapes[i] === shapes[i - 1] && shapes[i].includes('C') ? run + 1 : 1; best = Math.max(best, run); }
   if (best >= 3) add('repeating-sections', 'The same section layout, again and again', 6, [`${best} sections in a row with the same centred layout`],
     'When three or more sections in a row share one layout (centred heading, then a grid), the page reads like a template. Give each section a shape that suits its job: a list, a split, a quote, a gallery, a form.', best);
+
+  // ---------- 14. Not one photograph ----------
+  // AI builders can't photograph the work, the place or the people, so they leave photos out (or use icons).
+  const photoMedia = [...document.querySelectorAll('img, picture, video, canvas')].filter((m) => {
+    if (m.tagName === 'IMG' && /\.svg(?:[?#]|$)/i.test(m.currentSrc || m.src || '')) return false;
+    const r = m.getBoundingClientRect(); return r.width >= 160 && r.height >= 120;
+  }).length;
+  const photoBgs = [...document.querySelectorAll('body *')].filter((e) => {
+    const bg = getComputedStyle(e).backgroundImage;
+    if (!/url\(/.test(bg) || /\.svg/i.test(bg)) return false;
+    const r = e.getBoundingClientRect(); return r.width >= 240 && r.height >= 160;
+  }).length;
+  if (photoMedia + photoBgs === 0 && sections.length >= 2) add('no-photos', 'Not one photograph', 8, ['no photos or videos anywhere on the page'],
+    'A business site with no photographs at all is the clearest sign nobody went there with a camera. Add real photos of the work, the place, the product or the people (even good phone photos beat none), and let at least one lead the first screen.', 1);
+
+  // ---------- 15. The AI builder's own badge ----------
+  const BADGE = /\b(?:edit|made|built|created|powered) (?:with|in|by) (?:lovable|bolt(?:\.new)?|v0|replit|base44)\b/i;
+  const BADGE_HREF = /lovable\.dev|bolt\.new|v0\.(?:dev|app)|base44\.com|replit\.com\/refer/i;
+  const badges = [...document.querySelectorAll('a, div, span, button, [id*=badge]')].filter((e) => {
+    if (!visible(e) || e.getBoundingClientRect().height > 80) return false;
+    const t = (e.innerText || '').trim();
+    return (BADGE.test(t) && t.length < 60) || (BADGE_HREF.test(e.getAttribute('href') || '') && t.length < 40) || /^(?:lovable|bolt)-badge/i.test(e.id || '');
+  }).filter((e, i, all) => !all.some((o) => o !== e && o.contains(e)));
+  if (badges.length) add('builder-badge', "The AI builder's badge is still on", 6, badges.map(label),
+    'An "Edit with Lovable" (or Bolt, v0, Replit) badge tells every visitor the site came out of an AI builder in an afternoon. Remove it: the builder\'s paid plan or a setting turns it off.', badges.length);
 
   // ---------- score ----------
   const lost = findings.reduce((n, f) => n + f.points, 0);

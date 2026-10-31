@@ -128,6 +128,12 @@
   if (headFam && GENERIC.test(headFam) && headFam.toLowerCase() === bodyFam.toLowerCase())
     add('generic-font', `One default font for everything (${headFam})`, 8, [`headings and body both in ${headFam}`],
       `${headFam} for every heading and every paragraph is what most AI builders default to. Pair a display font with character (chosen for the business: a sturdy slab for a trade, an elegant serif for a spa) with a plain, readable body font.`, 1);
+  // the "elegant" pairing AI reaches for whenever a business sounds upmarket (bakeries, spas, florists, salons)
+  const DEFAULT_SERIF = /^(playfair display|playfair|cormorant garamond|cormorant|lora|merriweather|libre baskerville|dm serif display)$/i;
+  const PLAIN_BODY = /^(lato|open sans|source sans pro|source sans 3|raleway)$/i;
+  if (headFam && DEFAULT_SERIF.test(headFam) && (GENERIC.test(bodyFam) || PLAIN_BODY.test(bodyFam)))
+    add('default-pairing', `The default "elegant" font pair (${headFam} with ${bodyFam})`, 6, [`headings in ${headFam}, body in ${bodyFam}`],
+      `${headFam} with ${bodyFam} is the pairing AI picks whenever a business sounds upmarket, so every AI bakery, spa and florist looks the same. Choose a display face for this business in particular (its era, its place, its craft) and test it against your logo.`, 1);
 
   // ---------- 5b. The default indigo / violet accent ----------
   const btns = [...document.querySelectorAll('a, button')].filter((x) => visible(x) && x.getBoundingClientRect().height >= 32 && (x.innerText || '').trim().length > 1 && (x.innerText || '').trim().length < 40);
@@ -164,7 +170,8 @@
   // ---------- 7. Everything centred ----------
   const h2s = [...document.querySelectorAll('h2')].filter(visible);
   const centred = h2s.filter((h) => getComputedStyle(h).textAlign === 'center');
-  if (h2s.length >= 4 && centred.length / h2s.length >= 0.8) add('all-centred', 'Every section heading centred', 6, [`${centred.length} of ${h2s.length} section headings centred`],
+  const h1Centred = h1 && getComputedStyle(h1).textAlign === 'center';
+  if ((h2s.length >= 4 && centred.length / h2s.length >= 0.8) || (h2s.length === 3 && centred.length === 3 && h1Centred)) add('all-centred', 'Every section heading centred', 6, [`${centred.length} of ${h2s.length} section headings centred`],
     'When every section is a centred heading over a centred block, the page has no rhythm. Left-align most sections, keep centred type for one or two statements, and use asymmetric layouts (text on one side, image on the other).', 1);
 
   // ---------- 8. Stock hero (centred headline on a gradient, two buttons, no picture) ----------
@@ -219,7 +226,7 @@
     'Words like "elevate", "seamless", "unlock" and "cutting-edge" are what AI writes when it knows nothing about the business. Replace each with something specific and true: what you actually do, for whom, where, how fast, for how much.', hits.length);
 
   // ---------- 11. Placeholder content ----------
-  const PLACEHOLDER = [/\blorem ipsum\b/i, /\bdolor sit amet\b/i, /\byour company\b/i, /\bcompany name\b/i, /\bacme\b/i, /\bexample\.com\b/i, /\bjohn doe\b/i, /\bjane (?:doe|smith)\b/i, /\b123 main st/i, /\(555\)\s?\d/, /\byour (?:email|name) here\b/i, /\[[A-Z][A-Za-z ]{2,30}\]/];
+  const PLACEHOLDER = [/\blorem ipsum\b/i, /\bdolor sit amet\b/i, /\byour company\b/i, /\bcompany name\b/i, /\bacme\b/i, /\bexample\.com\b/i, /\bjohn doe\b/i, /\bjane (?:doe|smith)\b/i, /\b123 main st/i, /\b123 [a-z]+ (?:street|st|road|rd|avenue|ave|lane|way|drive)\b/i, /\b90210\b/, /\b(?:anytown|sweet town|sample town|your city|city, state)\b/i, /\(555\)\s?\d/, /\byour (?:email|name) here\b/i, /\[[A-Z][A-Za-z ]{2,30}\]/];
   const ph = [];
   for (const re of PLACEHOLDER) { const m = bodyText.match(re); if (m) ph.push(`"${m[0]}"`); }
   const placeholderLinks = [...document.querySelectorAll('a[href="#"], a[href=""], a:not([href])')].filter((a) => visible(a) && (a.innerText || '').trim().length > 1);
@@ -257,6 +264,23 @@
   if (photoMedia + photoBgs === 0 && sections.length >= 2) add('no-photos', 'Not one photograph', 8, ['no photos or videos anywhere on the page'],
     'A business site with no photographs at all is the clearest sign nobody went there with a camera. Add real photos of the work, the place, the product or the people (even good phone photos beat none), and let at least one lead the first screen.', 1);
 
+  // ---------- 14b. The same photo over and over ----------
+  // AI builders fill a product grid by reusing the few photos they have. Carousel and marquee
+  // clones (aria-hidden, "duplicate", "clone") are copies by design, so they don't count.
+  const bySrc = new Map();
+  for (const im of document.images) {
+    const src = (im.currentSrc || im.src || '').split(/[?#]/)[0];
+    if (!src || /\.svg$/i.test(src) || im.closest('[aria-hidden=true], [class*=duplicate], [class*=clone], [class*=marquee]')) continue;
+    const r = im.getBoundingClientRect();
+    if (r.width < 120 || r.height < 90) continue;
+    bySrc.set(src, (bySrc.get(src) || 0) + 1);
+  }
+  const reused = [...bySrc].filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+  const reusedTotal = reused.reduce((t, [, n]) => t + n, 0);
+  if (reused.length) add('repeated-images', 'The same photo used again and again', reusedTotal >= 10 ? 10 : 8,
+    reused.map(([src, n]) => `${src.split('/').pop()} shown ${n} times`),
+    'Showing the same few photos on different products (or services) tells visitors the pictures are filler, and they can\'t see what they\'d actually be buying. Give every item its own photo, even a plain phone shot on a clean background.', reusedTotal);
+
   // ---------- 15. The AI builder's own badge ----------
   const BADGE = /\b(?:edit|made|built|created|powered) (?:with|in|by) (?:lovable|bolt(?:\.new)?|v0|replit|base44)\b/i;
   const BADGE_HREF = /lovable\.dev|bolt\.new|v0\.(?:dev|app)|base44\.com|replit\.com\/refer/i;
@@ -268,10 +292,23 @@
   if (badges.length) add('builder-badge', "The AI builder's badge is still on", 6, badges.map(label),
     'An "Edit with Lovable" (or Bolt, v0, Replit) badge tells every visitor the site came out of an AI builder in an afternoon. Remove it: the builder\'s paid plan or a setting turns it off.', badges.length);
 
+  // ---------- did the page actually load? ----------
+  // A page still showing loading placeholders, an error, or almost no text can't be judged:
+  // the score would only measure the empty frame. Say so instead of passing it.
+  const incomplete = [];
+  const skeletons = [...document.querySelectorAll('[class*=skeleton], [class*=animate-pulse], [aria-busy=true], [class*=shimmer], [class*=placeholder-glow]')]
+    .filter((e) => visible(e) && e.getBoundingClientRect().width >= 60 && e.getBoundingClientRect().height >= 12);
+  if (skeletons.length >= 3) incomplete.push(`${skeletons.length} grey loading placeholders are still showing (the content behind them never arrived)`);
+  const ERROR_TEXT = /\b(?:something went wrong|failed to (?:load|fetch)|error loading|application error|overloaded|please (?:try again|retry)|unexpected error|service unavailable|could not load|try again later)\b/i;
+  const errEl = [...document.querySelectorAll('h1,h2,h3,p,div,span,[role=alert],[role=status]')].find((e) => visible(e) && e.children.length < 4 && ERROR_TEXT.test(e.innerText || '') && (e.innerText || '').length < 200);
+  if (errEl) incomplete.push(`the page shows an error: "${(errEl.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 80)}"`);
+  const words = bodyText.split(' ').filter((w) => /\w/.test(w)).length;
+  if (words < 80) incomplete.push(`only ${words} words on the page`);
+
   // ---------- score ----------
   const lost = findings.reduce((n, f) => n + f.points, 0);
   const score = Math.max(0, 100 - lost);
   const grade = score >= 85 ? 'Looks designed' : score >= 65 ? 'A few AI tells' : score >= 40 ? 'Looks AI-made' : 'AI slop';
   findings.sort((a, b) => b.points - a.points);
-  return { score, grade, viewport: `${W}x${H}`, url: location.href, findings };
+  return { score, grade, viewport: `${W}x${H}`, url: location.href, findings, incomplete: incomplete.length ? incomplete : undefined };
 })();

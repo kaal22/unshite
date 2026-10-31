@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+- **Knows when a page hasn't loaded.** Grey loading placeholders still showing, an error on the page, or almost no text: the score is marked unreliable instead of passing an empty page as "Looks designed".
+- New AI tell: the same photo used again and again, like one cake picture on twelve different cakes (8 to 10 points). Carousel and marquee copies don't count.
+- New AI tell: the default "elegant" font pair (Playfair Display, Cormorant or Lora with Lato or a system font), 6 points. Fake addresses ("123 Bakery Street", 90210, Anytown) count as placeholder text. A page with three section headings, all centred under a centred headline, counts as all centred.
+
 ## 2.1.0
 - **Sees modern AI-built sites properly.** Lovable, Bolt and v0 sites built with Tailwind 4 write their colours in a newer format (oklch) that the score couldn't read, so near-black text and the default blue buttons slipped through. Every colour format is read now.
 - **Two new AI tells:** not one photograph on the whole site (8 points), and the AI builder's own badge left on, like "Edit with Lovable" (6 points).

@@ -29,8 +29,10 @@ Run `slop-probe.js` (next to this file) in the page at **1440×900**. It is asyn
 | `placeholder` | Lorem ipsum, "Your Company", John Doe, (555) numbers, links to `#` | up to 14 |
 | `identical-cards` | Rows or grids of identical icon (or number) + heading + text cards | 5 to 9 |
 | `no-photos` | Not one photograph or video anywhere on the page | 8 |
+| `repeated-images` | The same photo used three or more times (product grids filled with a few photos) | 8 to 10 |
 | `black-text` | Pure black, or the near-black template default (#0F172A, #111827, #111) | 8 |
 | `generic-font` | One default font (Inter, Roboto, Poppins, system…) for headings and body | 8 |
+| `default-pairing` | The default "elegant" pair: Playfair Display, Cormorant or Lora headings with Lato or a system font | 6 |
 | `stock-hero` | Centred headline, two buttons, no photograph: the hero every AI tool makes | 8 |
 | `gradient-text` | Gradient-filled headline words | 6 |
 | `all-centred` | Every section heading centred | 6 |
@@ -40,6 +42,8 @@ Run `slop-probe.js` (next to this file) in the page at **1440×900**. It is asyn
 | `builder-badge` | The AI builder's badge still on ("Edit with Lovable", Bolt, v0, Replit) | 6 |
 | `hero-pill` | The little "✨ New: …" pill above the headline | 4 |
 | `vague-stats` | Round-number stats that may be made up ("10,000+ happy customers") | 4 |
+
+If the result has an `incomplete` list (loading placeholders still showing, an error on the page, or almost no text), the page didn't load properly and the score means nothing: reload, wait, and run it again. If it still won't load, report that as the first broken detail instead of giving a score.
 
 Score = 100 minus the points. **85 to 100: looks designed. 65 to 84: a few AI tells. 40 to 64: looks AI-made. Under 40: AI slop.**
 

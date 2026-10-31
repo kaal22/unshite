@@ -12,7 +12,7 @@
       "name": "unshite",
       "source": "./",
       "description": "Gives any website an AI slop score out of 100, then finds and fixes the generic AI look and the broken details AI builders leave behind.",
-      "version": "2.1.0"
+      "version": "2.2.0"
     }
   ]
 }

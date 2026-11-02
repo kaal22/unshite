@@ -41,7 +41,17 @@ Run `slop-probe.js` (next to this file) in the page at **1440×900**. It is asyn
 | `default-accent` | The default Tailwind blue, indigo or violet button colour | 5 |
 | `builder-badge` | The AI builder's badge still on ("Edit with Lovable", Bolt, v0, Replit) | 6 |
 | `hero-pill` | The little "✨ New: …" pill above the headline | 4 |
+| `fake-window` | A hand-drawn browser or Mac window (red, yellow, green dots) around a mock-up | 4 |
 | `vague-stats` | Round-number stats that may be made up ("10,000+ happy customers") | 4 |
+| `arrow-links` | An arrow typed onto the end of every link ("Learn more →"), three or more | 3 |
+
+The slop probe's result can also have a `notes` list, worth **0 points**: habits that are spreading through AI-designed sites but that real designers also use on purpose. Report them under "Worth a second look", never as AI tells, and don't change them unless the user asks:
+
+| Note | Means |
+|---|---|
+| `eyebrows` | A small label above three or more section headings ("OUR SERVICES" over "What we do") |
+| `tracked-caps` | Small letter-spaced CAPITAL labels all over the page (eight or more) |
+| `accent-word` | One word of the headline picked out in the accent colour or italics, on two or more headlines |
 
 If the result has an `incomplete` list (loading placeholders still showing, an error on the page, or almost no text), the page didn't load properly and the score means nothing: reload, wait, and run it again. If it still won't load, report that as the first broken detail instead of giving a score.
 
@@ -109,6 +119,7 @@ Write `.unshite/report.md`:
 - **Broken details:** each problem found, where, and what was changed.
 - **Before/after evidence** lines (or "No before/after widgets on this site").
 - **Open:** anything not fixed, and why; anything waiting on the user (real facts for copy, photos to replace generic ones).
+- **Worth a second look:** the slop probe's `notes` (eyebrows, spaced capitals, picked-out headline words), each with its examples and one line on why it's becoming an AI-designed habit. Not counted in the score and not changed unless the user asks.
 - **Checked and fine:** a one-line summary per section.
 
 Then tell the user briefly: the score before and after, what you fixed, anything still open, and that the full report is in `.unshite/report.md`. End with these two lines, once, exactly:

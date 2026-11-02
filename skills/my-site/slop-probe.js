@@ -32,6 +32,12 @@
   const add = (type, title, points, examples, fix, count) => {
     findings.push({ type, title, points, count: count ?? examples.length, examples: examples.slice(0, 5), fix });
   };
+  // Notes: habits that are spreading through AI-designed sites but are also used on purpose by real
+  // designers. They are reported with no points, as things worth a second look.
+  const notes = [];
+  const note = (type, title, examples, fix, count) => {
+    notes.push({ type, title, points: 0, count: count ?? examples.length, examples: examples.slice(0, 5), fix });
+  };
 
   // ---------- helpers ----------
   const visible = (el) => {
@@ -192,7 +198,7 @@
       return r.bottom <= hr1.top + 4 && hr1.top - r.bottom < 60 && r.height < 44 && r.width < 420 && parseFloat(st.borderRadius) >= 12 && (e.innerText || '').trim().length > 3;
     });
     if (before.length) add('hero-pill', 'A little pill badge above the headline', 4, before.map(label),
-      'The rounded "✨ New: ..." pill above the headline is copied from startup templates. Drop it, or turn it into a plain eyebrow line if it says something real.', before.length);
+      'The rounded "✨ New: ..." pill above the headline is copied from startup templates. Drop it; if it is real news, say it in the sub-line instead.', before.length);
   }
 
   // ---------- 9. Glass and glow ----------
@@ -292,6 +298,68 @@
   if (badges.length) add('builder-badge', "The AI builder's badge is still on", 6, badges.map(label),
     'An "Edit with Lovable" (or Bolt, v0, Replit) badge tells every visitor the site came out of an AI builder in an afternoon. Remove it: the builder\'s paid plan or a setting turns it off.', badges.length);
 
+  // ---------- 16. Eyebrows: a little label above every heading ----------
+  // "OUR SERVICES" over "What we do", "HOW IT WORKS" over "Three simple steps": the label says what the heading already says.
+  const eyebrows = [];
+  for (const h of [...document.querySelectorAll('h1,h2')].filter(visible)) {
+    let prev = h.previousElementSibling;
+    while (prev && !visible(prev)) prev = prev.previousElementSibling;
+    if (!prev || /^(A|BUTTON|IMG|PICTURE|SVG|NAV|UL|OL)$/i.test(prev.tagName) || prev.querySelector('a,button,img,svg,input')) continue;
+    const t = (prev.innerText || '').trim(), pr = prev.getBoundingClientRect(), hr = h.getBoundingClientRect();
+    if (!t || t.length > 40 || t.split(/\s+/).length > 6 || pr.height > 44) continue;
+    const gap = hr.top - pr.bottom;
+    if (gap < -2 || gap > 48 || Math.abs(pr.left - hr.left) > 40 && Math.abs((pr.left + pr.right) / 2 - (hr.left + hr.right) / 2) > 40) continue;
+    if (parseFloat(getComputedStyle(prev).fontSize) >= parseFloat(getComputedStyle(h).fontSize) * 0.6) continue;
+    eyebrows.push(prev);
+  }
+  if (eyebrows.length >= 3) note('eyebrows', 'A little label above every heading', eyebrows.map(label),
+    'A small label over each heading ("OUR SERVICES" above "What we do") is a template habit: it repeats what the heading already says. Delete the labels and let the headings do the work; keep one only where it adds a real fact (a date, a place, a step number in a real sequence).', eyebrows.length);
+
+  // ---------- 17. Tracked-capital labels everywhere ----------
+  const capsEls = textEls.filter((e) => {
+    const s = getComputedStyle(e), fs = parseFloat(s.fontSize), t = (e.innerText || '').trim();
+    if (fs > 15 || t.length < 3 || t.length > 40 || !/[a-z]{2}/i.test(t)) return false;
+    const caps = s.textTransform === 'uppercase' || (t === t.toUpperCase() && /[A-Z]{3}/.test(t));
+    return caps && parseFloat(s.letterSpacing) >= fs * 0.06;
+  });
+  if (capsEls.length >= 8) note('tracked-caps', 'Small spaced-out capital labels everywhere', capsEls.map(label),
+    'Tiny letter-spaced CAPITALS on labels, tags, buttons and captions is one of the most common AI styling defaults. Set labels in the body font, a size smaller, in normal sentence case; keep spaced capitals for one deliberate place at most (the logo, say).', capsEls.length);
+
+  // ---------- 18. One word picked out in the headline ----------
+  const accentHeads = [...document.querySelectorAll('h1,h2')].filter(visible).filter((h) => {
+    const hs = getComputedStyle(h), hc = rgb(hs.color), full = (h.innerText || '').trim();
+    if (full.split(/\s+/).length < 3) return false;
+    return [...h.querySelectorAll('span,em,i,strong,mark,b')].some((sp) => {
+      const t = (sp.innerText || '').trim(), ss = getComputedStyle(sp);
+      if (!visible(sp) || !t || t.length > full.length * 0.6 || /text/.test(ss.webkitBackgroundClip || ss.backgroundClip || '')) return false;
+      const c = rgb(ss.color);
+      const recoloured = c && hc && Math.abs(c.r - hc.r) + Math.abs(c.g - hc.g) + Math.abs(c.b - hc.b) > 90;
+      const italic = ss.fontStyle === 'italic' && hs.fontStyle !== 'italic';
+      return recoloured || italic;
+    });
+  });
+  if (accentHeads.length >= 2) note('accent-word', 'One word in each headline picked out in colour or italics', accentHeads.map(label),
+    'Setting one word of every headline in the accent colour (or in italics) is a stock AI flourish, and repeated down the page it stops meaning anything. Set headlines in one colour and one style; if one word truly needs weight, get it from the wording or a line break.', accentHeads.length);
+
+  // ---------- 19. Arrows glued to links ----------
+  const arrows = [...document.querySelectorAll('a, button')].filter((a) => visible(a) && /\S\s*(?:→|->|⟶|↗|»)\s*$/.test((a.innerText || '').trim()) && (a.innerText || '').trim().length < 40);
+  if (arrows.length >= 3) add('arrow-links', 'An arrow on the end of every link', 3, arrows.map(label),
+    '"Learn more →", "Get started →", "See all →": an arrow typed onto every link is a template habit. Write links that say exactly where they go ("See the price list") and let the button look like a button.', arrows.length);
+
+  // ---------- 20. A drawn browser or app window ----------
+  const dots = [...document.querySelectorAll('span, div, i')].filter((e) => {
+    const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+    return r.width >= 6 && r.width <= 16 && Math.abs(r.width - r.height) < 2 && parseFloat(s.borderRadius) >= r.width / 2 - 1 && visible(e);
+  });
+  const trafficLights = dots.filter((d) => {
+    const sibs = [...d.parentElement.children].filter((x) => dots.includes(x));
+    if (sibs.length !== 3 || sibs[0] !== d) return false;
+    const hues = sibs.map((x) => hsl(rgb(getComputedStyle(x).backgroundColor) || { r: 0, g: 0, b: 0 }));
+    return hues[0].s > 0.4 && (hues[0].h < 20 || hues[0].h > 340) && hues[1].h > 30 && hues[1].h < 60 && hues[2].h > 90 && hues[2].h < 160;
+  });
+  if (trafficLights.length) add('fake-window', 'A hand-drawn browser or app window', 4, trafficLights.map((d) => label(d.parentElement)),
+    'A box with red, yellow and green "traffic light" dots pretending to be a browser or Mac window is a mock-up cliché. Show a real screenshot of the real thing, or the thing itself, without fake window chrome.', trafficLights.length);
+
   // ---------- did the page actually load? ----------
   // A page still showing loading placeholders, an error, or almost no text can't be judged:
   // the score would only measure the empty frame. Say so instead of passing it.
@@ -310,5 +378,5 @@
   const score = Math.max(0, 100 - lost);
   const grade = score >= 85 ? 'Looks designed' : score >= 65 ? 'A few AI tells' : score >= 40 ? 'Looks AI-made' : 'AI slop';
   findings.sort((a, b) => b.points - a.points);
-  return { score, grade, viewport: `${W}x${H}`, url: location.href, findings, incomplete: incomplete.length ? incomplete : undefined };
+  return { score, grade, viewport: `${W}x${H}`, url: location.href, findings, notes: notes.length ? notes : undefined, incomplete: incomplete.length ? incomplete : undefined };
 })();

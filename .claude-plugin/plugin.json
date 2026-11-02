@@ -1,7 +1,7 @@
 {
   "name": "unshite",
   "displayName": "Unshite My Site",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Free website checker for Claude Code: gives any site an AI slop score out of 100, then finds and fixes the generic AI look (purple gradients, emoji icons, stock heroes, identical cards, cliché copy, placeholder text) and the broken details AI builders leave behind (cut-off images and text, unreadable text over photos, hidden headings, sideways scrolling, broken links). Run /unshite:my-site.",
   "author": {
     "name": "No Shite Sites",

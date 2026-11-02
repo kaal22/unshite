@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.0
+- **New: "Worth a second look" notes.** A newer kind of AI website looks designed at first glance, because it was made by an AI with design rules. Its habits are now reported as notes: a small label above every heading ("OUR SERVICES" over "What we do"), small spaced-out capital labels everywhere, and one word of each headline picked out in colour or italics. They don't cost points, because real designers use them on purpose too, but if your site has all three, it's worth asking whether each one earns its place.
+- New AI tell: a hand-drawn browser or Mac window (the red, yellow and green dots) around a mock-up, 4 points.
+- New AI tell: an arrow typed onto the end of every link ("Learn more →", "Get started →"), 3 points.
+- The "New" pill above a headline no longer suggests turning it into a label.
+- Scores for real designed sites are unchanged: all 15 of our designed demos score exactly as before.
+
 ## 2.2.0
 - **Knows when a page hasn't loaded.** Grey loading placeholders still showing, an error on the page, or almost no text: the score is marked unreliable instead of passing an empty page as "Looks designed".
 - New AI tell: the same photo used again and again, like one cake picture on twelve different cakes (8 to 10 points). Carousel and marquee copies don't count.
